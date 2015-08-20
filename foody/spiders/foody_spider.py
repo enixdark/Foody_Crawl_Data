@@ -76,22 +76,22 @@ class FoodySpider(CrawlSpider):
 
 	def parse_extract_data_city(self, response):
 	    food_list = response.xpath('//div[@id="user-wish-list"]/div/div[3]/div')
-		_datas = FoodyItem()
-		_datas['list'] = []
-		for food in food_list:
-		    item = FoodyItem()
-		    item['name'] = ''.join(food.xpath('.//div[@class="collection-detail-list-full-item-heading"]/div[2]/h2/a/text()').extract())
-		    _data_address = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[1]/span[2]/text()').extract()).split(',')
-		    if len(_data_address) == 4:
-		    	_data_address = [_data_address[0], _data_address[1]  + _data_address[2], _data_address[3]]
-                    elif len(_data_address) == 5:
-		    	_data_address = [_data_address[0] + _data_address[1],_data_address[2]   + _data_address[3], _data_address[4]]
-		    item['address'], item['lane'], item['city'] = _data_address
-		    item['phone'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[2]/span[2]/text()').extract())
-		    item['price_start'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[1]/text()').extract())
-		    item['price_end'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[2]/span[1]/text()').extract())
-                    _datas['list'].append(item)
-		return _datas
+	    _datas = FoodyItem()
+	    _datas['list'] = []
+	    for food in food_list:
+		item = FoodyItem()
+		item['name'] = ''.join(food.xpath('.//div[@class="collection-detail-list-full-item-heading"]/div[2]/h2/a/text()').extract())
+		_data_address = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[1]/span[2]/text()').extract()).split(',')
+		if len(_data_address) == 4:
+		    _data_address = [_data_address[0], _data_address[1]  + _data_address[2], _data_address[3]]
+                elif len(_data_address) == 5:
+		    _data_address = [_data_address[0] + _data_address[1],_data_address[2]   + _data_address[3], _data_address[4]]
+		item['address'], item['lane'], item['city'] = _data_address
+		item['phone'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[2]/span[2]/text()').extract())
+		item['price_start'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[1]/text()').extract())
+		item['price_end'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[2]/span[1]/text()').extract())
+                _datas['list'].append(item)
+	    return _datas
 
 	# def parse_extract_food(self,response):
 

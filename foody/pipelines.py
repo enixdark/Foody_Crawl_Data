@@ -7,18 +7,26 @@
 
 
 import pymongo
-from pymongo import MongoClient
+from mongoengine import connect
 from scrapy.conf import settings
 from scrapy import log
-
+from .models import models
 class FoodyPipeline(object):
     def __init__(self):
-        connection = MongoClient(settings.get('MONGODB_URI'))
-        db = connection[settings['MONGODB_DATABASE']]
+        connection = connect(settings['MONGODB_DATABASE'], settings.get('MONGODB_URI'))
         # db.authenticate(settings['MONGODB_USERNAME'], settings['MONGODB_PASSWORD'])
-        self.collection = db[settings['CRAWLER_COLLECTION']]
+        # self.collection = db[settings['CRAWLER_COLLECTION']]
 
     def process_item(self, item, spider):
     	for _item in item['list']:
-            self.collection.insert(dict(_item))
+           new = models.FoodyModel(
+           	name = _item['name'],
+           	address = _item['address'],
+           	price_start = _item['price_start'],
+           	price_end = _item['price_end'],
+                lane = _item['lane'],
+                phone = _item['phone'],
+                city = _item['city']
+           )
+           new.save()
         return item
