@@ -6,6 +6,19 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 
 
+import pymongo
+from pymongo import MongoClient
+from scrapy.conf import settings
+from scrapy import log
+
 class FoodyPipeline(object):
+    def __init__(self):
+        connection = MongoClient(settings.get('MONGODB_URI'))
+        db = connection[settings['MONGODB_DATABASE']]
+        # db.authenticate(settings['MONGODB_USERNAME'], settings['MONGODB_PASSWORD'])
+        self.collection = db[settings['CRAWLER_COLLECTION']]
+
     def process_item(self, item, spider):
+    	for _item in item['list']:
+            self.collection.insert(dict(_item))
         return item
