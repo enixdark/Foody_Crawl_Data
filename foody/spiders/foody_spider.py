@@ -76,8 +76,6 @@ class FoodySpider(CrawlSpider):
 
 	def parse_extract_data_city(self, response):
 	    food_list = response.xpath('//div[@id="user-wish-list"]/div/div[3]/div')
-    	    if food_list:
-    	    	import ipdb; ipdb.set_trace()
 		_datas = FoodyItem()
 		_datas['list'] = []
 		for food in food_list:
