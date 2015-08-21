@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from scrapy.conf import settings
-from redismiddlewares import RedisEngine
+from sqlite4middlewares import LSMEngine
 from scrapy.selector import Selector
 
 import time
@@ -25,7 +25,6 @@ class RandomUserAgentMiddleware(object):
             request.headers.setdefault("User-Agent", userAgent)
 
 class JSMiddleware(object):
-
     def __init__(self,*args, **kwargs):
     	super(JSMiddleware,self).__init__(*args, **kwargs)
         self.dcap = dict(DesiredCapabilities.PHANTOMJS)
@@ -37,7 +36,7 @@ class JSMiddleware(object):
         _driver.set_page_load_timeout(180)
         _driver.get(request.url)
         i = 0
-        _next = int(RedisEngine.redis.get('foody:'+ request.url) or 15)
+        _next = LSMEngine.db[request.url] if requet.url in LSMEngine.db else 15
         while i < _next:
             ajax_link = None
             try:
@@ -60,7 +59,7 @@ class JSMiddleware(object):
             for node in nodes:
                 _url = ''.join(node.xpath('.//div/a/@href').extract())
                 num = math.ceil(int( ''.join(node.xpath('.//div[2]/span[1]/text()').extract() or 75 )) / 5.0)
-                RedisEngine.redis.setnx('foody:' + '/'.join([spider.main_url, _url]),num)
+                LSMEngine.db['/'.join([spider.main_url, _url])] = num
         except:
             pass
         _driver.close()

@@ -44,10 +44,14 @@ MONGODB_STOP_ON_DUPLICATE = 100
 
 
 #use redis to cache data from crawl such url, quantity
-REDIS_URL = '127.0.0.1'
-REDIS_PORT = 6379
-REDIS_DBNAME = 0
+# REDIS_URL = '127.0.0.1'
+# REDIS_PORT = 6379
+# REDIS_DBNAME = 0
+# 
 
+#LSM
+LSM_PATH = "."
+LSM_DBNAME = "foody.db"
 #MAX DUPLICATE FOUND TO STOP SPIDER
 MAX_DUP_COUNT = 100
 
