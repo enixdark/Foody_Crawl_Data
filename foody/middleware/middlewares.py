@@ -4,13 +4,15 @@ from scrapy.http import HtmlResponse, Response
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from scrapy.conf import settings
+from redismiddlewares import RedisEngine
+from scrapy.selector import Selector
+
 import time
-from scrapy.conf import settings
 import re
+import os
+import math
 import random
-
-
-from scrapy.conf import settings
 
 class ProxyMiddleware(object):
     def process_request(self, request, spider):
@@ -35,7 +37,8 @@ class JSMiddleware(object):
         _driver.set_page_load_timeout(180)
         _driver.get(request.url)
         i = 0
-        while i < 15:
+        _next = RedisEngine.redis.get('foody:'+ request.url) or 5
+        while i < _next:
             ajax_link = None
             try:
                # if 'http://www.foody.vn/bo-suu-tap/' in request.url:
@@ -52,6 +55,13 @@ class JSMiddleware(object):
                    time.sleep(3)
         body = _driver.page_source
         url = _driver.current_url
+        for node in Selector(text=body).xpath('//div[@class="profile-collection-container1"]/div'):
+            url = ''.join(node.xpath('.//div/a/@href').extract())
+            try:
+               num = math.ceil(int(''.join(node.xpath('.//div[2]/span[1]/text()').extract())) / 5.0)
+            except:
+               num = 15
+            RedisEngine.redis.setnx('foody:'+ os.path.join(spider.main_url,url),num)
         _driver.close()
         return HtmlResponse(url, body = body, encoding='utf-8', request = request)
         # return HtmlResponse(request.url, encoding='utf-8', request = request)

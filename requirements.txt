@@ -3,3 +3,6 @@ scrapy>=1.0.3
 Beautifulsoup>=4.3.2
 ipdb>=0.8.1
 selenium
+hiredis>=0.2.0
+redis>=2.0.1
+lsm-db>=0.1.4
