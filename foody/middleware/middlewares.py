@@ -37,7 +37,7 @@ class JSMiddleware(object):
         _driver.set_page_load_timeout(180)
         _driver.get(request.url)
         i = 0
-        _next = RedisEngine.redis.get('foody:'+ request.url) or 5
+        _next = int(RedisEngine.redis.get('foody:'+ request.url) or 15)
         while i < _next:
             ajax_link = None
             try:
@@ -55,13 +55,14 @@ class JSMiddleware(object):
                    time.sleep(3)
         body = _driver.page_source
         url = _driver.current_url
-        for node in Selector(text=body).xpath('//div[@class="profile-collection-container1"]/div'):
-            url = ''.join(node.xpath('.//div/a/@href').extract())
-            try:
-               num = math.ceil(int(''.join(node.xpath('.//div[2]/span[1]/text()').extract())) / 5.0)
-            except:
-               num = 15
-            RedisEngine.redis.setnx('foody:'+ os.path.join(spider.main_url,url),num)
+        try:
+            nodes = Selector(text=body).xpath('//div[@class="profile-collection-container1"]/div')
+            for node in nodes:
+                _url = ''.join(node.xpath('.//div/a/@href').extract())
+                num = math.ceil(int( ''.join(node.xpath('.//div[2]/span[1]/text()').extract() or 75 )) / 5.0)
+                RedisEngine.redis.setnx('foody:' + '/'.join([spider.main_url, _url]),num)
+        except:
+            pass
         _driver.close()
         return HtmlResponse(url, body = body, encoding='utf-8', request = request)
         # return HtmlResponse(request.url, encoding='utf-8', request = request)
