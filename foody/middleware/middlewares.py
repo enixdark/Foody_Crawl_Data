@@ -12,6 +12,10 @@ import random
 
 from scrapy.conf import settings
 
+class ProxyMiddleware(object):
+    def process_request(self, request, spider):
+        request.meta['proxy'] = settings.get('HTTP_PROXY')
+
 class RandomUserAgentMiddleware(object):
     def process_request(self, request,spider):
         userAgent = random.choice(settings.get('USER_AGENT_LIST'))
@@ -28,10 +32,10 @@ class JSMiddleware(object):
     def process_request(self, request, spider):
 	_driver = webdriver.PhantomJS(desired_capabilities=self.dcap)
         _driver.set_window_size(1440, 900)
-        _driver.set_page_load_timeout(60)
+        _driver.set_page_load_timeout(180)
         _driver.get(request.url)
         i = 0
-        while i < 5:
+        while i < 15:
             ajax_link = None
             try:
                # if 'http://www.foody.vn/bo-suu-tap/' in request.url:

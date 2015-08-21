@@ -34,6 +34,9 @@ ITEM_PIPELINES = {
   'foody.pipelines.FoodyPipeline': 1,
 }
 
+HTTP_PROXY = 'http://127.0.0.1:8118'
+
+
 MONGODB_URI = 'mongodb://localhost:27017'
 MONGODB_DATABASE = 'foody'
 
@@ -51,11 +54,8 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 CRAWLER_DOMAIN='foody.vn'
 CRAWLER_COLLECTION = 'crawler.foody.vn'
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'foody (+http://www.yourdomain.com)'
-
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS=1
+CONCURRENT_REQUESTS=4
 
 # Configure a delay for requests for the same website (default: 0)
 # See http://scrapy.readthedocs.org/en/latest/topics/settings.html#download-delay
@@ -85,9 +85,6 @@ CONCURRENT_REQUESTS=1
 
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'foody.middlewares.MyCustomDownloaderMiddleware': 543,
-#}
 
 # Enable or disable extensions
 # See http://scrapy.readthedocs.org/en/latest/topics/extensions.html
