@@ -11,7 +11,7 @@ from selenium import webdriver
 import time
 from ..items import FoodyItem
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
+import re
 
 class FoodySpider(CrawlSpider):
 	name = "foody"
@@ -20,80 +20,125 @@ class FoodySpider(CrawlSpider):
 	]
 
 	start_urls = [
-		'http://www.foody.vn/',
+		'http://www.foody.vn',
+		'http://www.foody.vn/ha-noi/nha-hang'
 	]
 
 	
 
 	__queue = [
-		'top-thanh-vien$'
+		r'(.?)page=[23456789]'
 	]
 
 	rules = [
 	    Rule(
 	    	LinkExtractor(allow=(
-	    		r'[-\w]+\/',
-	    		r'bo-suu-tap\/[-.\w\/]+',
-	    		r'bo-suu-tap\/w+',
+	    		# r'[-\w]+\/',
+	    		r'bo-suu-tap\/[-.?=\w\/]+',
+	    		r'ha-noi\/[-.?=\w]+',
+	    		r'ha-noi\/[-.?=\w]+\/',
 	    	), deny=__queue,
 	    	restrict_xpaths=[
-	    		r'//ul[@class="vietnam-regions-list"]/li/a',
-	    		r'//div[@class="profile-collection-container1"]/div/div[1]/a[1]'
+	    		# r'//div[6]/section[1]/div/div/div/div[2]/div/div[3]',
+	    		# r'//div[6]/section[1]/div/div/div/div[2]/div',
+	    		# r'//div[6]/section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]',
+	    		# r'//div[6]/section[2]/div/div/div/div/div[1]/div[3]/div/div/div/div[3]/div/div/div[3]/div',
+	    		# r'//div[6]/section[2]/div/div/div/div/div[1]/div[3]/div/div/div/div[3]/div/div/div[4]',
+	    		# r'//div[6]/section[2]/div/div/div/div/div[1]/div[3]/div/div/div/div[4]/div',
+	    		# r'//div[6]/section[2]/div/div/div/div/div[1]/div[4]/div/div'
 	    	]), 
 	    	callback='parse_extract_data_city', follow=True
 	    	)
 	    ]
 
-
-	def __init__(self,*args, **kwargs):
-		super(FoodySpider, self).__init__(*args, **kwargs)
-		# dcap = dict(DesiredCapabilities.PHANTOMJS)
-		# dcap["phantomjs.page.settings.userAgent"] = settings.get("USER_AGENT_LIST")
-		# self.driver = webdriver.PhantomJS(desired_capabilities=dcap)
-		self.driver = webdriver.Firefox()
-		self.countries = []
-		self.main_url = 'http://www.foody.vn'
-
 	
-	def start_requests(self):
-		if self.countries == []:
-			self.driver.get(self.main_url)
-			time.sleep(3)
-			self.driver.find_element_by_class_name("dropdown1").find_element_by_tag_name('a').click()
-			self.countries = Selector(text=self.driver.page_source).xpath('//ul[@class="vietnam-regions-list"]/li/a/@href').extract()
-			self.driver.close()
-		# for url in self.countries:
-		# 	yield Request(self.main_url + url, callback=self.parse)
-		requests = list(super(FoodySpider, self).start_requests())
-		requests += [Request(self.main_url + url, self.parse_extract_data_city) for url in self.countries]
-		return requests
+	def extract(self,sel,xpath):
+		try:
+			text = sel.xpath(xpath).extract()
+			return re.sub(r"\s+", "", ''.join(text).strip(), flags=re.UNICODE)
 
-
-	# def start_urls(self,response):
-	
-
+		except Exception, e:
+			raise Exception("Invalid XPath: %s" % e)
 
 
 	def parse_extract_data_city(self, response):
-	    food_list = response.xpath('//div[@id="user-wish-list"]/div/div[3]/div')
-		_datas = FoodyItem()
-		_datas['list'] = []
-		for food in food_list:
-		    item = FoodyItem()
-		    item['name'] = ''.join(food.xpath('.//div[@class="collection-detail-list-full-item-heading"]/div[2]/h2/a/text()').extract())
-		    _data_address = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[1]/span[2]/text()').extract()).split(',')
-		    if len(_data_address) == 4:
-		    	_data_address = [_data_address[0], _data_address[1]  + _data_address[2], _data_address[3]]
-                    elif len(_data_address) == 5:
-		    	_data_address = [_data_address[0] + _data_address[1],_data_address[2]   + _data_address[3], _data_address[4]]
-		    item['address'], item['lane'], item['city'] = _data_address
-		    item['phone'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[2]/span[2]/text()').extract())
-		    item['price_start'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[1]/text()').extract())
-		    item['price_end'] = ''.join(food.xpath('.//div[@class="collection-detail-list-item-information"]/div[3]/span[2]/span[2]/span[1]/text()').extract())
-                    _datas['list'].append(item)
-		return _datas
+		item = None
+		try:
+			if ('khu-vuc' not in response.url) and ('bo-suu-tap' not in response.url):
+				sel = response.xpath('//div[6]')
+				item = FoodyItem()
+				item['url'] = response.url
+				item['title'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[2]/h1//text()')
+				item['address'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[1]/div/div//text()')
+			    # lane = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[2]/div[1]//text()')
+			    # city = self.extract(sel,'//text()')
+			    # phone = self.extract(sel,'//text()')
+				item['time_start'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[1]//text()')
+				item['time_end'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[2]//text()')
+				item['price_start']= self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span//text()')
+				item['price_end'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span/span//text()')
+				item['image'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[1]/div/a/img/@src')
 
-	# def parse_extract_food(self,response):
+				item['total_write_review'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[1]/a[2]/span//text()')
+				item['total_upload_images'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[2]/a[2]/span//text()')
+				item['total_check_in'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[3]/a[2]/span//text()')
+				item['total_save_to_love_collection'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[4]/a[2]/span//text()')
+				item['total_save_to_wish_collection'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[5]/a[2]/span//text()')
+				item['total_save_to_custom_collections'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[2]/div[1]/div[1]/ul/li[6]/a[2]/span//text()')
 
+
+				item['score_space'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[1]/div[1]/span//text()')
+				item['score_quality'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[2]/div[1]/span//text()')
+				item['score_price'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[3]/div[1]/span//text()')
+				item['score_service'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[4]/div[1]/span//text()')
+				item['score_location'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[5]/div[1]/span//text()')
+
+				item['total_score_comment_for_excellent'] = self.extract(sel,'//section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]/div/div[2]/div[1]/div[1]/a/span[1]/b//text()')
+				item['total_score_comment_for_good'] = self.extract(sel,'//section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]/div/div[2]/div[1]/div[2]/a/span[1]/b//text()')
+				item['total_score_comment_for_avg'] = self.extract(sel,'//section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]/div/div[2]/div[1]/div[3]/a/span[1]/b//text()')
+				item['total_score_comment_for_bad'] = self.extract(sel,'//section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]/div/div[2]/div[1]/div[4]/a/span[1]/b//text()')
+				item['avg_score_comment'] = self.extract(sel,'//section[2]/div/div/div/div/div[1]/div[1]/div/div/div[1]/div/div[2]/div[1]/div[5]/div/span/b//text()')
+
+				geo = self.extract(sel,'//a[@class="linkmap"]/img/@src').split('_')
+				item['geo_latitude'] = geo[-2].replace('-','.')
+				item['geo_longitude'] = geo[-1].replace('-','.').replace('.jpg','')
+
+				item['types'] = self.extract(sel,'//div[@class="new-detail-info-sec"][2]/div[1]/div[2]//text()')
+				item['dining_time'] = self.extract(sel,'//div[@class="new-detail-info-sec"][1]/div[2]/div[2]//text()')
+				item['last_order'] = self.extract(sel,'//div[@class="new-detail-info-sec"][1]/div[3]/div[2]//text()')
+				item['waiting_time'] =self.extract(sel,'//div[@class="new-detail-info-sec"][1]/div[4]/div[2]//text()')
+				item['holiday'] = self.extract(sel,'//div[@class="new-detail-info-sec"][1]/div[5]/div[2]//text()')
+				item['capacity'] = self.extract(sel,'//div[@class="new-detail-info-sec"][2]/div[2]/div[2]//text()')
+				item['cuisine_style']  = self.extract(sel,'//div[@class="new-detail-info-sec"][2]/div[3]/div[2]//text()')
+				item['good_for'] = self.extract(sel,'//div[@class="new-detail-info-sec"][2]/div[4]/div[2]//text()')
+				item['typical_dishes']  = self.extract(sel,'//div[@class="new-detail-info-sec"][2]/div[5]/div[2]//text()')
+				item['website'] = self.extract(sel,'//div[@class="new-detail-info-sec"][3]/div/div[2]//b/text()')
+
+				item['is_reservation_required'] = self.extract(sel,'//ul[@class="micro-property"]/li[1]/@class') or True
+				item['is_delivery_service'] = self.extract(sel,'//ul[@class="micro-property"]/li[2]/@class') or True
+				item['is_takeaway_service'] = self.extract(sel,'//ul[@class="micro-property"]/li[3]/@class') or True
+				item['is_wifi'] =self.extract(sel,'//ul[@class="micro-property"]/li[4]/@class') or True
+				item['is_playground_for_kid'] = self.extract(sel,'//ul[@class="micro-property"]/li[5]/@class') or True
+				item['is_outdoor_seat'] = self.extract(sel,'//ul[@class="micro-property"]/li[6]/@class') or True
+				item['is_private_room'] = self.extract(sel,'//ul[@class="micro-property"]/li[7]/@class') or True
+				item['is_air_conditioner'] = self.extract(sel,'//ul[@class="micro-property"]/li[8]/@class') or True
+				item['is_credit_card_available'] = self.extract(sel,'//ul[@class="micro-property"]/li[9]/@class') or True
+				item['is_karaoke_service'] = self.extract(sel,'//ul[@class="micro-property"]/li[10]/@class') or True
+				item['is_free_bike_park'] = self.extract(sel,'//ul[@class="micro-property"]/li[11]/@class') or True
+				item['is_tip_for_staff'] = self.extract(sel,'//ul[@class="micro-property"]/li[12]/@class') or True
+				item['is_car_park'] = self.extract(sel,'//ul[@class="micro-property"]/li[13]/@class') or True
+				item['is_smoking_zone'] = self.extract(sel,'//ul[@class="micro-property"]/li[14]/@class') or True
+				item['is_member_card'] = self.extract(sel,'//ul[@class="micro-property"]/li[15]/@class') or True
+				item['is_tax_invoice_available'] = self.extract(sel,'//ul[@class="micro-property"]/li[16]/@class') or True
+				item['is_conference_support'] = self.extract(sel,'//ul[@class="micro-property"]/li[17]/@class') or True
+				item['is_heat_conditioner'] = self.extract(sel,'//ul[@class="micro-property"]/li[18]/@class') or True
+				item['is_disabled_person_support'] = self.extract(sel,'//ul[@class="micro-property"]/li[19]/@class') or True
+				item['is_live_sport_tv'] = self.extract(sel,'//ul[@class="micro-property"]/li[20]/@class') or True
+				item['is_live_music'] = self.extract(sel,'//ul[@class="micro-property"]/li[21]/@class') or True
+		except:
+			pass
+
+		if item and 'title' in item:
+			return item
 
 

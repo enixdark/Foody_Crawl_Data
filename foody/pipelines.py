@@ -10,7 +10,7 @@ import pymongo
 from pymongo import MongoClient
 from scrapy.conf import settings
 from scrapy import log
-
+from middleware.sqlite4lsmmiddlewares import LSMEngine
 class FoodyPipeline(object):
     def __init__(self):
         connection = MongoClient(settings.get('MONGODB_URI'))
@@ -19,6 +19,8 @@ class FoodyPipeline(object):
         self.collection = db[settings['CRAWLER_COLLECTION']]
 
     def process_item(self, item, spider):
-    	for _item in item['list']:
-            self.collection.insert(dict(_item))
+    	data = dict(item)
+    	if data['url'] not in LSMEngine.db:
+    		LSMEngine.db['url'] = '1'
+    		self.collection.insert(data)
         return item
