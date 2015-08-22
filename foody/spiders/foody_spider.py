@@ -54,8 +54,9 @@ class FoodySpider(CrawlSpider):
 	
 	def extract(self,sel,xpath):
 		try:
-			text = sel.xpath(xpath).extract()
-			return re.sub(r"\s+", "", ''.join(text).strip(), flags=re.UNICODE)
+			text = filter(lambda element: element.strip(), sel.xpath(xpath).extract())
+			return ''.join(text)
+			# return re.sub(r"\s+", "", ''.join(text).strip(), flags=re.UNICODE)
 
 		except Exception, e:
 			raise Exception("Invalid XPath: %s" % e)
@@ -75,7 +76,7 @@ class FoodySpider(CrawlSpider):
 			    # phone = self.extract(sel,'//text()')
 				item['time_start'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[1]//text()')
 				item['time_end'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[2]//text()')
-				item['price_start']= self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span//text()')
+				item['price_start']= self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span//text()').split('-')[0]
 				item['price_end'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span/span//text()')
 				item['image'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[1]/div/a/img/@src')
 
@@ -138,7 +139,7 @@ class FoodySpider(CrawlSpider):
 		except:
 			pass
 
-		if item and 'title' in item:
+		if ('title' in item and item['title']) and ( 'address' in item and item['address']):
 			return item
 
 
