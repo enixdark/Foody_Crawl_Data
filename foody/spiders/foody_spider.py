@@ -54,7 +54,8 @@ class FoodySpider(CrawlSpider):
 	
 	def extract(self,sel,xpath):
 		try:
-			text = filter(lambda element: element.strip(), sel.xpath(xpath).extract())
+			data = sel.xpath(xpath).extract()
+			text = filter(lambda element: element.strip(), data)
 			return ''.join(text)
 			# return re.sub(r"\s+", "", ''.join(text).strip(), flags=re.UNICODE)
 
@@ -66,14 +67,14 @@ class FoodySpider(CrawlSpider):
 		item = None
 		try:
 			if ('khu-vuc' not in response.url) and ('bo-suu-tap' not in response.url):
-				sel = response.xpath('//div[6]')
+				sel = response
 				item = FoodyItem()
 				item['url'] = response.url
 				item['title'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[2]/h1//text()')
 				item['address'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[1]/div/div//text()')
-			    # lane = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[2]/div[1]//text()')
-			    # city = self.extract(sel,'//text()')
-			    # phone = self.extract(sel,'//text()')
+    # lane = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[3]/div/div[2]/div[1]//text()')
+    # city = self.extract(sel,'//text()')
+    # phone = self.extract(sel,'//text()')
 				item['time_start'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[1]//text()')
 				item['time_end'] = self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[1]/span[3]/span/span[2]//text()')
 				item['price_start']= self.extract(sel,'//section[1]/div/div/div/div[2]/div/div[4]/div[2]/div/div[1]/div[4]/div[3]/div[2]/span[2]/span//text()').split('-')[0]
@@ -139,7 +140,7 @@ class FoodySpider(CrawlSpider):
 		except:
 			pass
 
-		if ('title' in item and item['title']) and ( 'address' in item and item['address']):
+		if item and ('title' in item and item['title'] != '') and ( 'address' in item and item['address'] != ''):
 			return item
 
 
